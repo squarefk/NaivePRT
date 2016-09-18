@@ -8,14 +8,30 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 GLuint vertexArrayID;
-GLuint vertexBuffer;
+GLuint vertexBufferPosition;
+GLuint vertexBufferColor;
+GLuint vertexBufferNormal;
 GLuint programID;
 
-static const GLfloat dataArray[] = {
-    -1.0f, -1.0f, 0.0f,
-    1.0f, -1.0f, 0.0f,
-    0.0f, 1.0f, 0.0f,
+static const GLfloat positionData[] = {
+	-1.0f, -1.0f, 0.0f,
+	1.0f, -1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
 };
+
+static const GLfloat colorData[] = {
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f
+};
+
+static const GLfloat normalData[] = {
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+};
+
+
 
 void prepare() {
 	glewInit();
@@ -23,11 +39,21 @@ void prepare() {
     // generate a VAO
     glGenVertexArrays(1, &vertexArrayID);
     glBindVertexArray(vertexArrayID);
-    
-    // generate a VBO
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(dataArray), dataArray, GL_STATIC_DRAW);
+
+	// generate a VBO for position
+	glGenBuffers(1, &vertexBufferPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(positionData), positionData, GL_STATIC_DRAW);
+
+	// generate a VBO for color
+	glGenBuffers(1, &vertexBufferColor);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferColor);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colorData), colorData, GL_STATIC_DRAW);
+
+	// generate a VBO for normal
+	glGenBuffers(1, &vertexBufferNormal);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferNormal);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normalData), normalData, GL_STATIC_DRAW);
 
     // initialize shaders
     programID = LoadShaders("white_triangles.vs", "white_triangles.fs");
@@ -46,20 +72,34 @@ void render() {
 	glm::mat4 Model = glm::mat4(1.0f);  // Changes for each model !
 										// Our ModelViewProjection : multiplication of our 3 matrices
 	glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+	glm::vec3 LightPosition = glm::vec3(1, 1, 1);
+
+	GLuint MVPID = glGetUniformLocation(programID, "MVP");
+	glUniformMatrix4fv(MVPID, 1, GL_FALSE, &MVP[0][0]);
+
+	GLuint ModelID = glGetUniformLocation(programID, "M");
+	glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Model[0][0]);
+
+	GLuint ViewID = glGetUniformLocation(programID, "V");
+	glUniformMatrix4fv(ViewID, 1, GL_FALSE, &View[0][0]);
+
+	GLuint LightPositionID = glGetUniformLocation(programID, "LightPosition");
+	glUniformMatrix4fv(LightPositionID, 1, GL_FALSE, &LightPosition[0]);
 
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glVertexAttribPointer(
-        0,
-        3,
-        GL_FLOAT,
-        GL_FALSE,
-        0,
-        (void*)0
-    );
-    glUseProgram(programID);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferColor);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferNormal);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glUseProgram(programID);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glDisableVertexAttribArray(0);
 }
