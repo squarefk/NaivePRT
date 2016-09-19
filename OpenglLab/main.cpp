@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "framebuffer.h"
 #include "shader_helper.h"
 
 #define  GLEW_STATIC
@@ -14,12 +15,33 @@ GLuint vertexBufferNormal;
 GLuint programID;
 
 static const GLfloat positionData[] = {
-	-1.0f, -1.0f, 0.0f,
-	1.0f, -1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
+	-10.0f, -10.0f, 0.0f,
+	10.0f, -10.0f, 0.0f,
+	-10.0f, 10.0f, 0.0f,
+	-10.0f, 10.0f, 0.0f,
+	10.0f, -10.0f, 0.0f,
+	10.0f, 10.0f, 0.0f,
+
+	-4.0f, -4.0f, 2.0f,
+	4.0f, -4.0f, 2.0f,
+	-4.0f, 4.0f, 2.0f,
+	-4.0f, 4.0f, 2.0f,
+	4.0f, -4.0f, 2.0f,
+	4.0f, 4.0f, 2.0f,
+
 };
 
 static const GLfloat colorData[] = {
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
+	0.66f, 0.33f, 0.33f,
 	0.66f, 0.33f, 0.33f,
 	0.66f, 0.33f, 0.33f,
 	0.66f, 0.33f, 0.33f
@@ -29,9 +51,19 @@ static const GLfloat normalData[] = {
 	0.0f, 0.0f, 1.0f,
 	0.0f, 0.0f, 1.0f,
 	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
 };
 
-
+Framebuffer *framebuffer;
 
 void prepare() {
 	glewInit();
@@ -57,22 +89,29 @@ void prepare() {
 
     // initialize shaders
     programID = LoadShaders("white_triangles.vs", "white_triangles.fs");
+
+	framebuffer = new Framebuffer();
 }
 
 void render() {
+	framebuffer->render();
+	framebuffer->render_to_screen();
+
 	// Projection matrix : 45бу Field of View, 4:3 ratio, display range : 0.1 unit  100 units
 	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
 	// Camera matrix
 	glm::mat4 View = glm::lookAt(
-		glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
+		glm::vec3(0, 20, 8), // Position of camera, in World Space
 		glm::vec3(0, 0, 0), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(0, 0, 1)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 	// Model matrix : an identity matrix (model will be at the origin)
 	glm::mat4 Model = glm::mat4(1.0f);  // Changes for each model !
 										// Our ModelViewProjection : multiplication of our 3 matrices
+
 	glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
-	glm::vec3 LightPosition = glm::vec3(1, 1, 1);
+	glm::vec3 LightPosition = glm::vec3(0, 0, 5);
+	GLfloat LightPower = 100.0;
 
 	GLuint MVPID = glGetUniformLocation(programID, "MVP");
 	glUniformMatrix4fv(MVPID, 1, GL_FALSE, &MVP[0][0]);
@@ -84,9 +123,12 @@ void render() {
 	glUniformMatrix4fv(ViewID, 1, GL_FALSE, &View[0][0]);
 
 	GLuint LightPositionID = glGetUniformLocation(programID, "LightPosition");
-	glUniformMatrix4fv(LightPositionID, 1, GL_FALSE, &LightPosition[0]);
+	glUniform3fv(LightPositionID, 1, &LightPosition[0]);
 
-    glEnableVertexAttribArray(0);
+	GLuint LightPowerID = glGetUniformLocation(programID, "LightPower");
+	glUniform1f(LightPowerID, LightPower);
+
+	glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
@@ -99,7 +141,7 @@ void render() {
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glUseProgram(programID);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 12);
     glDisableVertexAttribArray(0);
 }
 

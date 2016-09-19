@@ -27,12 +27,18 @@
     <ClInclude Include="mesh_builder.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="framebuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="mesh_builder.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="framebuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
+    <ClInclude Include="framebuffer.h" />
     <ClInclude Include="mesh_builder.h" />
     <ClInclude Include="shader_helper.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="framebuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh_builder.cpp" />
   </ItemGroup>
