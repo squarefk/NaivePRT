@@ -30,6 +30,12 @@
     <ClCompile Include="mesh_builder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\basic_color.fs" />
+    <None Include="shaders\basic_color.vs" />
+    <None Include="shaders\depth_map.fs" />
+    <None Include="shaders\depth_map.vs" />
+    <None Include="shaders\shadow_square.fs" />
+    <None Include="shaders\shadow_square.vs" />
     <None Include="shaders\white_triangles.fs" />
     <None Include="shaders\white_triangles.vs" />
   </ItemGroup>

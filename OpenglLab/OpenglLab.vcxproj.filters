@@ -49,5 +49,23 @@
     <None Include="shaders\white_triangles.vs">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shaders\depth_map.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\depth_map.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_color.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_color.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadow_square.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadow_square.vs">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

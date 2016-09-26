@@ -40,3 +40,7 @@ void Framebuffer::render_to_screen() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
+
+GLuint Framebuffer::get_texture_id() {
+	return TextureName;
+}

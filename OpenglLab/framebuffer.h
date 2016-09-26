@@ -9,6 +9,7 @@ public:
 	Framebuffer(int width = 1024, int height = 1024);
 	~Framebuffer();
 	void render();
+	GLuint get_texture_id();
 	static void render_to_screen();
 
 private:
