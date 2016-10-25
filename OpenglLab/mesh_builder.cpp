@@ -1,5 +1,7 @@
 #include "mesh_builder.h"
 
+#include <glm/glm.hpp>
+
 bool MeshBuilder::import(const std::string& pFile) {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(
@@ -16,6 +18,7 @@ bool MeshBuilder::import(const std::string& pFile) {
 		return false;
 	}
 	processNode(scene->mRootNode, scene);
+	completeNormalAndColor();
 	return true;
 }
 
@@ -32,13 +35,31 @@ void MeshBuilder::processNode(const aiNode* node, const aiScene* sceneObjPtr) {
 void MeshBuilder::processMesh(const aiMesh* meshPtr, const aiScene* sceneObjPtr)
 {
 	for (size_t i = 0; i < meshPtr->mNumVertices; ++i) {
+		// push_back position of vertex
+		positionData.push_back(meshPtr->mVertices[i].x);
+		positionData.push_back(meshPtr->mVertices[i].y);
+		positionData.push_back(meshPtr->mVertices[i].z);
+		// push_back color of vertex
+		if (meshPtr->mColors[0] != NULL) {
+			colorData.push_back(meshPtr->mColors[0][i].r);
+			colorData.push_back(meshPtr->mColors[0][i].g);
+			colorData.push_back(meshPtr->mColors[0][i].b);
+		}
+		// push_back normal of vertex
+		if (meshPtr->mNormals != NULL) {
+			normalData.push_back(meshPtr->mNormals[i].x);
+			normalData.push_back(meshPtr->mNormals[i].y);
+			normalData.push_back(meshPtr->mNormals[i].z);
+		}
 	}
 	for (size_t i = 0; i < meshPtr->mNumFaces; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			aiVector3D v = meshPtr->mVertices[meshPtr->mFaces[i].mIndices[j]];
-			fprintf(stderr, "(%.2f %.2f %.2f) ", v.x, v.y, v.z);
-		}
-		fprintf(stderr,"\n");
+		indicesData.push_back(meshPtr->mFaces[i].mIndices[0]);
+		indicesData.push_back(meshPtr->mFaces[i].mIndices[1]);
+		indicesData.push_back(meshPtr->mFaces[i].mIndices[2]);
+		fprintf(stderr, "%d %d %d\n",
+			meshPtr->mFaces[i].mIndices[0],
+			meshPtr->mFaces[i].mIndices[1],
+			meshPtr->mFaces[i].mIndices[2]);
 	}
 /*
 	if (meshPtr->mMaterialIndex >= 0)
@@ -48,4 +69,76 @@ void MeshBuilder::processMesh(const aiMesh* meshPtr, const aiScene* sceneObjPtr)
 	}
 	http://blog.csdn.net/wangdingqiaoit/article/details/52014321
 */
+}
+
+void MeshBuilder::completeNormalAndColor() {
+	int tempColorDataSize = colorData.size();
+	for (int i = tempColorDataSize; i < positionData.size(); i += 3) {
+		colorData.push_back(1.f);
+		colorData.push_back(1.f);
+		colorData.push_back(1.f);
+	}
+	int tempNormalDataSize = normalData.size();
+	for (int i = tempNormalDataSize; i < positionData.size(); i += 3) {
+		normalData.push_back(0.f);
+		normalData.push_back(0.f);
+		normalData.push_back(0.f);
+	}
+	for (int i = 0; i < indicesData.size(); i += 3)
+		if (indicesData[i] * 3 >= tempNormalDataSize) {
+			glm::vec3 v[3];
+			for (int delta = 0; delta < 3; ++delta) {
+				v[delta].x = positionData[indicesData[i + delta] * 3];
+				v[delta].y = positionData[indicesData[i + delta] * 3 + 1];
+				v[delta].z = positionData[indicesData[i + delta] * 3 + 2];
+			}
+			glm::vec3 n = glm::normalize(glm::cross(v[1] - v[0], v[2] - v[0]));
+			for (int delta = 0; delta < 3; ++delta) {
+				normalData[indicesData[i + delta] * 3] += n.x;
+				normalData[indicesData[i + delta] * 3 + 1] += n.y;
+				normalData[indicesData[i + delta] * 3 + 2] += n.z;
+			}
+		}
+	for (int i = tempNormalDataSize; i < positionData.size(); i += 3) {
+		glm::vec3 n = glm::vec3(
+			normalData[i],
+			normalData[i + 1],
+			normalData[i + 2]
+		);
+		n = glm::normalize(n);
+		normalData[i] = n.x;
+		normalData[i + 1] = n.y;
+		normalData[i + 2] = n.z;
+	}
+	for (int i = 0; i < normalData.size(); i += 3)
+		fprintf(stderr,"The normal of (%.2f %.2f %.2f) is (%.2f %.2f %.2f)\n",
+			positionData[i],
+			positionData[i + 1],
+			positionData[i + 2],
+			normalData[i],
+			normalData[i + 1],
+			normalData[i + 2]
+		);
+}
+
+void MeshBuilder::generateVAO() {
+	// generate a VAO
+	glGenVertexArrays(1, &vertexArrayID);
+	glBindVertexArray(vertexArrayID);
+	// generate a VBO for position
+	glGenBuffers(1, &vertexBufferPositionID);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPositionID);
+	glBufferData(GL_ARRAY_BUFFER, positionData.size() * sizeof(float), &positionData[0], GL_STATIC_DRAW);
+	// generate a VBO for color
+	glGenBuffers(1, &vertexBufferColorID);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferColorID);
+	glBufferData(GL_ARRAY_BUFFER, colorData.size() * sizeof(float), &colorData[0], GL_STATIC_DRAW);
+	// generate a VBO for normal
+	glGenBuffers(1, &vertexBufferNormalID);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferNormalID);
+	glBufferData(GL_ARRAY_BUFFER, normalData.size() * sizeof(float), &normalData[0], GL_STATIC_DRAW);
+	// generate a VBO for indices
+	glGenBuffers(1, &vertexBufferIndicesID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBufferIndicesID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesData.size() * sizeof(unsigned int), &indicesData[0], GL_STATIC_DRAW);
 }

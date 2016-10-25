@@ -68,7 +68,7 @@ Framebuffer *depthFramebuffer;
 glm::mat4 depthMVP;
 
 glm::vec3 LightPosition = glm::vec3(0, 15, 0);
-GLfloat LightPower = 100.0;
+GLfloat LightPower = 200.f;
 
 void prepare() {
 	glewInit();
@@ -81,16 +81,21 @@ void prepare() {
 	glGenBuffers(1, &vertexBufferPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(positionData), positionData, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// generate a VBO for color
 	glGenBuffers(1, &vertexBufferColor);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferColor);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(colorData), colorData, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// generate a VBO for normal
 	glGenBuffers(1, &vertexBufferNormal);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferNormal);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normalData), normalData, GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindVertexArray(0);
 
     // initialize shaders
 	depthProgramID = LoadShaders("depth_map.vs", "depth_map.fs");
@@ -114,9 +119,8 @@ void render_depth_map() {
 
 	depthMVP = Projection * View * Model;
 
+	glBindVertexArray(vertexArrayID);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glUseProgram(depthProgramID);
 	GLuint depthMVPID = glGetUniformLocation(depthProgramID, "depthMVP");
@@ -125,6 +129,7 @@ void render_depth_map() {
 	glDrawArrays(GL_TRIANGLES, 0, 12);
 
 	glDisableVertexAttribArray(0);
+	glBindVertexArray(0);
 }
 
 void render_scene() {
@@ -134,22 +139,17 @@ void render_scene() {
 
 	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
 	glm::mat4 View = glm::lookAt(
-		glm::vec3(0, 8, 20), // Position of camera, in World Space
-		glm::vec3(0, 0, 0), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(0, 8, 20),	// Position of camera, in World Space
+		glm::vec3(0, 0, 0),		// and looks at the origin
+		glm::vec3(0, 1, 0)		// Head is up (set to 0,-1,0 to look upside-down)
 	);
 	glm::mat4 Model = glm::mat4(1.0f);
 	glm::mat4 MVP = Projection * View * Model;
 
+	glBindVertexArray(vertexArrayID);
 	glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferPosition);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferColor);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferNormal);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glUseProgram(programID);
 	glActiveTexture(GL_TEXTURE0);
@@ -168,12 +168,13 @@ void render_scene() {
 	glUniform3fv(LightPositionID, 1, &LightPosition[0]);
 	GLuint LightPowerID = glGetUniformLocation(programID, "LightPower");
 	glUniform1f(LightPowerID, LightPower);
-	
+
 	glDrawArrays(GL_TRIANGLES, 0, 12);
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	glBindVertexArray(0);
 }
 
 int main() {
