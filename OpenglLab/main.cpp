@@ -16,19 +16,19 @@ GLuint vertexBufferNormal;
 GLuint programID, depthProgramID;
 
 static const GLfloat positionData[] = {
-	-10.0f, -10.0f, 0.0f,
-	10.0f, -10.0f, 0.0f,
-	-10.0f, 10.0f, 0.0f,
-	-10.0f, 10.0f, 0.0f,
-	10.0f, -10.0f, 0.0f,
-	10.0f, 10.0f, 0.0f,
+	-10.0f, 0.0f, -10.0f,
+	10.0f, 0.0f, -10.0f,
+	-10.0f, 0.0f, 10.0f,
+	-10.0f, 0.0f, 10.0f,
+	10.0f, 0.0f, -10.0f,
+	10.0f, 0.0f, 10.0f,
 
-	-4.0f, -4.0f, 2.0f,
-	4.0f, -4.0f, 2.0f,
-	-4.0f, 4.0f, 2.0f,
-	-4.0f, 4.0f, 2.0f,
-	4.0f, -4.0f, 2.0f,
-	4.0f, 8.0f, 2.0f,
+	-4.0f, 2.0f, -4.0f,
+	4.0f, 2.0f, -4.0f,
+	-4.0f, 2.0f, 4.0f,
+	-4.0f, 2.0f, 4.0f,
+	4.0f, 2.0f, -4.0f,
+	4.0f, 2.0f, 8.0f
 
 };
 
@@ -49,25 +49,25 @@ static const GLfloat colorData[] = {
 };
 
 static const GLfloat normalData[] = {
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
 
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
 };
 
 Framebuffer *depthFramebuffer;
 glm::mat4 depthMVP;
 
-glm::vec3 LightPosition = glm::vec3(0, 0, 5);
+glm::vec3 LightPosition = glm::vec3(0, 15, 0);
 GLfloat LightPower = 100.0;
 
 void prepare() {
@@ -108,7 +108,7 @@ void render_depth_map() {
 	glm::mat4 View = glm::lookAt(
 		LightPosition, // Position of camera, in World Space
 		glm::vec3(0, 0, 0), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(0, 0, 1)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 	glm::mat4 Model = glm::mat4(1.0f);
 
@@ -129,14 +129,14 @@ void render_depth_map() {
 
 void render_scene() {
 	Framebuffer::render_to_screen();
-	//	depthFramebuffer->render();
+//	depthFramebuffer->render();
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
 	glm::mat4 View = glm::lookAt(
-		glm::vec3(0, 20, 8), // Position of camera, in World Space
+		glm::vec3(0, 8, 20), // Position of camera, in World Space
 		glm::vec3(0, 0, 0), // and looks at the origin
-		glm::vec3(0, 0, 1)  // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 	glm::mat4 Model = glm::mat4(1.0f);
 	glm::mat4 MVP = Projection * View * Model;
