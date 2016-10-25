@@ -1,3 +1,4 @@
+#include "mesh_builder.h"
 #include "constants.h"
 #include "framebuffer.h"
 #include "shader_helper.h"
@@ -176,6 +177,12 @@ void render_scene() {
 }
 
 int main() {
+	MeshBuilder builder;
+	if (builder.import(std::string(OBJECT_FILE_PATH_PREFIX) + 
+		std::string("cube.obj"))) {
+		fprintf(stderr, "Loading object file successfully.");
+	}
+
     if (!glfwInit()) {
         return -1;
     }
