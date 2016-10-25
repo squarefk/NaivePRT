@@ -7,4 +7,5 @@ OpenglLab.vcxproj.filters
 *.idb
 *.pdb
 *.suo
+Debug/
 OpenglLab/Debug/
