@@ -1,9 +1,10 @@
-Debug/*
-OpenglLab/Debug/*
 OpenglLab.VC.db
 OpenglLab.VC.VC.opendb
 OpenglLab.vcxproj
 OpenglLab.vcxproj.filters
 *.tlog
-/.vs/*
-/OpenglLab/Debug/*
+*.log
+*.idb
+*.pdb
+*.suo
+OpenglLab/Debug/
