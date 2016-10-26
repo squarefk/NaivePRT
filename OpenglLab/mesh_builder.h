@@ -25,9 +25,11 @@ class MeshBuilder{
 	void processNode(const aiNode* node, const aiScene* sceneObjPtr);
 	void processMesh(const aiMesh* meshPtr, const aiScene* sceneObjPtr);
 	void completeNormalAndColor();
-	void generateVAO();
 public:
 	bool import(const std::string& pFile);
+	void generateVAO();
+	void draw();
+	void draw0();
 };
 
 #endif

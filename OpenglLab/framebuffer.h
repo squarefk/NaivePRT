@@ -17,6 +17,7 @@ private:
 	int height;
 	GLuint FramebufferName;
 	GLuint TextureName;
+	GLuint DepthName;
 };
 
 #endif
