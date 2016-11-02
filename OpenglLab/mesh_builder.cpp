@@ -1,44 +1,77 @@
 #include "mesh_builder.h"
 
+#include "constants.h"
+
 #include <glm/glm.hpp>
 
-bool MeshBuilder::import(const std::string& pFile) {
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(
-		pFile,
-		aiProcess_CalcTangentSpace |		//后处理标志，自动计算切线和副法线
-		aiProcess_Triangulate |				//后处理标志，自动将四边形面转换为三角面
-		aiProcess_JoinIdenticalVertices |	//后处理标志，自动合并相同的顶点
-		aiProcess_SortByPType				//后处理标志，将不同图元放置到不同的模型中去，图片类型可能是点、直线、三角形等
-	);
-	if (!scene ||
-		scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE ||
-		!scene->mRootNode) {
-		fprintf(stderr, (std::string("Error occurs when import obj from ") + pFile).c_str());
-		return false;
+float MeshBuilder::import(const std::string& pFile, int extraObj) {
+	if (pFile != std::string("")) {
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(
+			std::string(OBJECT_FILE_PATH_PREFIX) + pFile,
+			aiProcess_Triangulate |				//后处理标志，自动将四边形面转换为三角面
+			aiProcess_JoinIdenticalVertices |	//后处理标志，自动合并相同的顶点
+			aiProcess_SortByPType				//后处理标志，将不同图元放置到不同的模型中去，图片类型可能是点、直线、三角形等
+		);
+		if (!scene ||
+			scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE ||
+			!scene->mRootNode) {
+			fprintf(stderr, (std::string("Error occurs when import obj from ") + pFile + std::string("\n")).c_str());
+			return -1.f;
+		}
+		processNode(scene->mRootNode, scene);
 	}
-	processNode(scene->mRootNode, scene);
 
-	std::vector<float> groundPositionData = std::vector<float>{
-		-3.f,-1.f,-3.f,
-		3.f,-1.f,-3.f,
-		-3.f,-1.f,3.f,
-		3.f,-1.f,3.f,
-	};
-	unsigned int index = positionData.size() / 3;
-	std::vector<unsigned int> indicesPositionData = std::vector<unsigned int> {
-		index, index + 2, index + 1,
-		index + 1, index + 2, index + 3
-	};
-	for (auto f : groundPositionData) {
-		positionData.push_back(f);
+	if (extraObj == 0) {
+		std::vector<float> groundPositionData = std::vector<float>{
+			-3.f,-1.f,-3.f,
+			3.f,-1.f,-3.f,
+			-3.f,-1.f,3.f,
+			3.f,-1.f,3.f,
+		};
+		unsigned int index = positionData.size() / 3;
+		std::vector<unsigned int> indicesPositionData = std::vector<unsigned int>{
+			index, index + 2, index + 1,
+			index + 1, index + 2, index + 3
+		};
+		for (auto f : groundPositionData) {
+			positionData.push_back(f);
+		}
+		for (auto f : indicesPositionData) {
+			indicesData.push_back(f);
+		}
 	}
-	for (auto f : indicesPositionData) {
-		indicesData.push_back(f);
+	else if (extraObj == 1) {
+		std::vector<float> groundPositionData = std::vector<float>{
+			-1.f, -1.f, 0.f,
+			-1.f, 1.f, 0.f,
+			1.f, -1.f, 0.f,
+			1.f, 1.f, 0.f,
+		};
+		unsigned int index = positionData.size() / 3;
+		std::vector<unsigned int> indicesPositionData = std::vector<unsigned int>{
+			index, index + 2, index + 1,
+			index + 1, index + 2, index + 3
+		};
+		for (auto f : groundPositionData) {
+			positionData.push_back(f);
+		}
+		for (auto f : indicesPositionData) {
+			indicesData.push_back(f);
+		}
 	}
 
 	completeNormalAndColor();
-	return true;
+
+	float result = 0;
+	for (unsigned int i = 0; i < positionData.size(); i += 3) {
+		result = std::max(result, sqrt(
+			positionData[i] * positionData[i] +
+			positionData[i + 1] * positionData[i + 1] +
+			positionData[i + 2] * positionData[i + 2]
+		));
+	}
+	return result;
 }
 
 void MeshBuilder::processNode(const aiNode* node, const aiScene* sceneObjPtr) {
@@ -94,33 +127,33 @@ void MeshBuilder::processMesh(const aiMesh* meshPtr, const aiScene* sceneObjPtr)
 
 void MeshBuilder::completeNormalAndColor() {
 	int tempColorDataSize = colorData.size();
-	for (int i = tempColorDataSize; i < positionData.size(); i += 3) {
+	for (unsigned int i = tempColorDataSize; i < positionData.size(); i += 3) {
 		colorData.push_back(1.f);
 		colorData.push_back(1.f);
 		colorData.push_back(1.f);
 	}
-	int tempNormalDataSize = normalData.size();
-	for (int i = tempNormalDataSize; i < positionData.size(); i += 3) {
+	unsigned int tempNormalDataSize = normalData.size();
+	for (unsigned int i = tempNormalDataSize; i < positionData.size(); i += 3) {
 		normalData.push_back(0.f);
 		normalData.push_back(0.f);
 		normalData.push_back(0.f);
 	}
-	for (int i = 0; i < indicesData.size(); i += 3)
+	for (unsigned int i = 0; i < indicesData.size(); i += 3)
 		if (indicesData[i] * 3 >= tempNormalDataSize) {
 			glm::vec3 v[3];
-			for (int delta = 0; delta < 3; ++delta) {
+			for (unsigned int delta = 0; delta < 3; ++delta) {
 				v[delta].x = positionData[indicesData[i + delta] * 3];
 				v[delta].y = positionData[indicesData[i + delta] * 3 + 1];
 				v[delta].z = positionData[indicesData[i + delta] * 3 + 2];
 			}
 			glm::vec3 n = glm::normalize(glm::cross(v[1] - v[0], v[2] - v[0]));
-			for (int delta = 0; delta < 3; ++delta) {
+			for (unsigned int delta = 0; delta < 3; ++delta) {
 				normalData[indicesData[i + delta] * 3] += n.x;
 				normalData[indicesData[i + delta] * 3 + 1] += n.y;
 				normalData[indicesData[i + delta] * 3 + 2] += n.z;
 			}
 		}
-	for (int i = tempNormalDataSize; i < positionData.size(); i += 3) {
+	for (unsigned int i = tempNormalDataSize; i < positionData.size(); i += 3) {
 		glm::vec3 n = glm::vec3(
 			normalData[i],
 			normalData[i + 1],

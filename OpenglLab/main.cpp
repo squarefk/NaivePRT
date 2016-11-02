@@ -1,5 +1,6 @@
 #include "constants.h"
 #include "shader_helper.h"
+#include "prt_algorithm.h"
 #include "shadow_map_algorithm.h"
 
 #define  GLEW_STATIC
@@ -9,14 +10,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 ShadowMapAlgorithm shadowMapAlgorithm;
+PrtAlgorithm prtAlgorithm;
 
 void prepare() {
 	glewInit();
-	shadowMapAlgorithm.prepare();
+//	shadowMapAlgorithm.prepare();
+	prtAlgorithm.prepare();
 }
 
 void render() {
-	shadowMapAlgorithm.render();
+//	shadowMapAlgorithm.render();
+	prtAlgorithm.render();
 }
 
 int main() {

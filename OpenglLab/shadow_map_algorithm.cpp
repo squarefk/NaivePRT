@@ -17,7 +17,6 @@ void ShadowMapAlgorithm::prepare() {
 
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-
 }
 
 void ShadowMapAlgorithm::render_shadow_map() {
@@ -37,7 +36,6 @@ void ShadowMapAlgorithm::render_shadow_map() {
 	glUseProgram(depthProgramID);
 	GLuint depthMVPID = glGetUniformLocation(depthProgramID, "depthMVP");
 	glUniformMatrix4fv(depthMVPID, 1, GL_FALSE, &depthMVP[0][0]);
-
 	builder.draw0();
 }
 
@@ -71,7 +69,6 @@ void ShadowMapAlgorithm::render_target() {
 	glUniform3fv(LightPositionID, 1, &LightPosition[0]);
 	GLuint LightPowerID = glGetUniformLocation(programID, "LightPower");
 	glUniform1f(LightPowerID, LightPower);
-
 	builder.draw();
 }
 
