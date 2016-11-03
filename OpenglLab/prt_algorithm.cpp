@@ -134,28 +134,28 @@ float PrtAlgorithm::brdf(int inIndex, int outIndex) {
 	glm::vec3 N{ 0, 0, 1 };
 	glm::vec3 L{ sin(theta[inIndex]) * cos(phi[inIndex]), sin(theta[inIndex]) * sin(phi[inIndex]), cos(theta[inIndex]) };
 	glm::vec3 V{ sin(theta[outIndex]) * cos(phi[outIndex]), sin(theta[outIndex]) * sin(phi[outIndex]), cos(theta[outIndex]) };
-	glm::vec3 T = glm::cross(N, V);
-	if (L.z < 0 || V.z < 0) {
+	glm::vec3 T = glm::normalize(glm::cross(N, V));
+	if (L.z < 0) {
 		return 0.f;
 	}
-	float LT = glm::dot(L, T);
-	float VT = glm::dot(V, T);
+	float LT = std::max(0.f, glm::dot(L, T));
+	float VT = std::max(0.f, glm::dot(V, T));
 	return 0.1f + 0.9f * pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 2);
 }
 
 float PrtAlgorithm::brdf(int inIndex, glm::vec3 V) {
 	glm::vec3 N{ 0, 0, 1 };
 	glm::vec3 L{ sin(theta[inIndex]) * cos(phi[inIndex]), sin(theta[inIndex]) * sin(phi[inIndex]), cos(theta[inIndex]) };
-	glm::vec3 T = glm::cross(N, V);
-	if (L.z < 0 || V.z < 0) {
+	glm::vec3 T = glm::normalize(glm::cross(N, V));
+	if (L.z < 0) {
 		return 0.f;
 	}
-	float LT = glm::dot(L, T);
-	float VT = glm::dot(V, T);
-	return 0.1f + 0.9f * pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 2);
+	float LT = std::max(0.f, glm::dot(L, T));
+	float VT = std::max(0.f, glm::dot(V, T));
+	return 0.2f + 0.8f * pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 1.f);
 }
 
-void toZYZ(const glm::mat3 &m, float *alpha, float *beta, float *gamma) {
+void PrtAlgorithm::rotate_matrix_to_zyz(const glm::mat3 &m, float *alpha, float *beta, float *gamma) {
 #define M(a, b) (m[a][b])
 
 	float sy = sqrtf(M(2, 1)*M(2, 1) + M(2, 0)*M(2, 0));
@@ -212,47 +212,29 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 	glm::mat3 m2{ cos(beta),0,-sin(beta),0,1,0,sin(beta),0,cos(beta) };
 	glm::mat3 m3{ cos(gamma),sin(gamma),0,-sin(gamma),cos(gamma),0,0,0,1 };
 	glm::mat3 rotate = m1 * m2 * m3;
-	toZYZ(rotate, &alpha, &beta, &gamma);
-	glm::mat3 mm1{ cos(-gamma),sin(-gamma),0,-sin(-gamma),cos(-gamma),0,0,0,1 };
-	glm::mat3 mm2{ 1, 0, 0, 0, cos(M_PI*0.5f), sin(M_PI*0.5f) ,0, -sin(M_PI*0.5f), cos(M_PI*0.5f) };
-	glm::mat3 mm3{ cos(-beta),sin(-beta),0,-sin(-beta),cos(-beta),0,0,0,1 };
-	glm::mat3 mm4{ 1, 0, 0, 0, cos(-M_PI*0.5f), sin(-M_PI*0.5f) ,0, -sin(-M_PI*0.5f), cos(-M_PI*0.5f) };
-	glm::mat3 mm5{ cos(-alpha),sin(-alpha),0,-sin(-alpha),cos(-alpha),0,0,0,1 };
+	rotate_matrix_to_zyz(rotate, &alpha, &beta, &gamma);
 	/*
-	fprintf(stderr, "\n===========\n");
-	for (int j = 0; j < 3; ++j) {
-		for (int k = 0; k < 3; ++k)
-			fprintf(stderr, "%.2f ", rotate[j][k]); fprintf(stderr, "\n");
-	}
-	for (int j = 0; j < 3; ++j) {
-		for (int k = 0; k < 3; ++k)
-			fprintf(stderr, "%.2f ", (mm5*mm4*mm3*mm2*mm1)[j][k]); fprintf(stderr, "\n");
-	}
-	fprintf(stderr, "\n===========\n");
+		glm::mat3 mm1{ cos(-gamma),sin(-gamma),0,-sin(-gamma),cos(-gamma),0,0,0,1 };
+		glm::mat3 mm2{ 1, 0, 0, 0, cos(M_PI*0.5f), sin(M_PI*0.5f) ,0, -sin(M_PI*0.5f), cos(M_PI*0.5f) };
+		glm::mat3 mm3{ cos(-beta),sin(-beta),0,-sin(-beta),cos(-beta),0,0,0,1 };
+		glm::mat3 mm4{ 1, 0, 0, 0, cos(-M_PI*0.5f), sin(-M_PI*0.5f) ,0, -sin(-M_PI*0.5f), cos(-M_PI*0.5f) };
+		glm::mat3 mm5{ cos(-alpha),sin(-alpha),0,-sin(-alpha),cos(-alpha),0,0,0,1 };
 	*/
 	std::vector<glm::vec3> tmp1, tmp2, tmp3, tmp4;
-	rotate_z(shadow, tmp1, -gamma);
-	rotate_x_minus(tmp1, tmp2);
+	rotate_z(shadow, tmp1, -alpha);
+	rotate_x_plus(tmp1, tmp2);
 	rotate_z(tmp2, tmp3, -beta);
-	rotate_x_plus(tmp3, tmp4);
-	rotate_z(tmp4, local, -alpha);
+	rotate_x_minus(tmp3, tmp4);
+	rotate_z(tmp4, local, -gamma);
 	
 	// calc B * R * T * vector (reflection)
-
-	//	glm::vec3 dir = glm::normalize(get_camera_position() - glm::vec3(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]));
-	//	dir = rotate * dir;
 	glm::vec3 color{ 0,0,0 };
+	glm::vec3 dir = glm::normalize(get_camera_position() - glm::vec3(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]));
+	glm::mat3 rotate_inv = glm::inverse(rotate);
+	dir = rotate_inv * dir;
 	for (int j = 0; j < lmaxlmax; ++j)
-		for (int p = 0; p < samps; ++p) {
-			glm::vec3 n1{ model.normalData[i],model.normalData[i + 1], model.normalData[i + 2] };
-			glm::vec3 v1{ sin(theta[p]) * cos(phi[p]), sin(theta[p]) * sin(phi[p]), cos(theta[p]) };
-			if (glm::dot(mm1 * mm2 * mm3 * mm4 * mm5 * v1, n1) > 0)
-				//			if (cos(theta[p]) > 0)
-				//			if (glm::dot(n1,v1) > 0)
-				color += local[j] * y_coeff[p][j] / 2.f;// *cos(theta[p]) * brdf(p, dir);
-													   //				color += shadow[j] * y_coeff[p][j] / 2.f;// *std::max(0.f, glm::dot(n1, v1));// *brdf(p, dir);
-		}
-	// yi ding yao shan aaaaa /2.
+		for (int p = 0; p < samps; ++p)
+			color += local[j] * y_coeff[p][j] * std::max(cos(theta[p]),0.f) * brdf(p, dir);
 	color *= (4.f * M_PI) / float(samps);
 	// fprintf(stderr, "%.4f\n", color.x);
 
@@ -276,11 +258,11 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 			color += yy[j] * reflect[j] / M_PI;
 	*/
 
-	return color / M_PI / 2.f;
+	return color / M_PI;
 }
 
 void PrtAlgorithm::update_rotate_angle() {
-	rotate_angle += 0.01f;
+	// rotate_angle += 0.01f;
 }
 
 glm::vec3 PrtAlgorithm::get_camera_position() {
@@ -311,10 +293,10 @@ void PrtAlgorithm::prepare() {
 		calc_sh_coeff(theta[i],phi[i],y_coeff[i]);
 	}
 
-	panorama.load("white.jpg");
+	panorama.load("Chelsea_Stairs_8k.jpg");
 	curtain.import(std::string(""), 1);
 	curtain.generateVAO();
-	distance = model.import(std::string("sphere.obj"), -1);
+	distance = model.import(std::string("bunny.fine.obj"), -1);
 	rotate_angle = M_PI;
 	bvhTree.load(model);
 
@@ -325,8 +307,8 @@ void PrtAlgorithm::prepare() {
 		fprintf(stderr, "Process model in %.2f%%, remain %.2f s         \r",
 			100.f * (i + 1) / model.positionData.size(),
 			float(currentTime - startTime) / (i + 1) * (model.positionData.size() - i));
-//		glm::vec3 color = precomputed_diffuse_color(i)/ 2.f;
-		glm::vec3 color = precomputed_bsdf_color(i);
+		glm::vec3 color = precomputed_diffuse_color(i) / 2.f;
+//		glm::vec3 color = precomputed_bsdf_color(i) / 2.f;
 		model.colorData[i] = color.r;
 		model.colorData[i+1] = color.g;
 		model.colorData[i+2] = color.b;

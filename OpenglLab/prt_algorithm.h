@@ -8,8 +8,8 @@
 #include <vector>
 
 class PrtAlgorithm {
-	int lmax = 5;
-	const static int samps = 400;
+	int lmax = 3;
+	const static int samps = 10000;
 
 	std::vector<float> phi, theta;
 	std::vector<float> p_coeff;
@@ -36,6 +36,7 @@ class PrtAlgorithm {
 	glm::vec3 precomputed_bsdf_color(int i);
 	float brdf(int p, int q);
 	float brdf(int p, glm::vec3);
+	void rotate_matrix_to_zyz(const glm::mat3 &m, float *alpha, float *beta, float *gamma);
 	void rotate_x_plus(const std::vector<glm::vec3>& vin, std::vector<glm::vec3>& vout);
 	void rotate_x_minus(const std::vector<glm::vec3>& vin, std::vector<glm::vec3>& vout);
 	void rotate_z(const std::vector<glm::vec3>& vin, std::vector<glm::vec3>& vout, float angle);

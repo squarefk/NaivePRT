@@ -109,7 +109,7 @@ bool BvhTree::ray_intersect_with_triangle(const Ray& ray, const Triangle& tri) {
 	v = glm::dot(ray.dir, Q);
 	if (v < -eps || u + v > det + eps) return false;
 	t = glm::dot(E2, Q);
-	if (t < det * eps) return false;
+	if (t < det * 1e-2f) return false;
 	dist = t / det;
 	return true;
 }
