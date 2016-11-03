@@ -211,15 +211,13 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 	glm::mat3 m1{ cos(alpha),sin(alpha),0,-sin(alpha),cos(alpha),0,0,0,1 };
 	glm::mat3 m2{ cos(beta),0,-sin(beta),0,1,0,sin(beta),0,cos(beta) };
 	glm::mat3 m3{ cos(gamma),sin(gamma),0,-sin(gamma),cos(gamma),0,0,0,1 };
-//	glm::mat3 m4{ 1, 0, 0, 0, cos(M_PI/2.f),-sin(M_PI / 2.f),0,sin(M_PI / 2.f),cos(M_PI / 2.f) };
 	glm::mat3 rotate = m1 * m2 * m3;
-//	fprintf(stderr, "before %.4f %.4f %.4f\n", alpha, beta, gamma);
 	toZYZ(rotate, &alpha, &beta, &gamma);
-	glm::mat3 mm1{ cos(gamma),sin(gamma),0,-sin(gamma),cos(gamma),0,0,0,1 };
+	glm::mat3 mm1{ cos(-gamma),sin(-gamma),0,-sin(-gamma),cos(-gamma),0,0,0,1 };
 	glm::mat3 mm2{ 1, 0, 0, 0, cos(M_PI*0.5f), sin(M_PI*0.5f) ,0, -sin(M_PI*0.5f), cos(M_PI*0.5f) };
-	glm::mat3 mm3{ cos(beta),sin(beta),0,-sin(beta),cos(beta),0,0,0,1 };
+	glm::mat3 mm3{ cos(-beta),sin(-beta),0,-sin(-beta),cos(-beta),0,0,0,1 };
 	glm::mat3 mm4{ 1, 0, 0, 0, cos(-M_PI*0.5f), sin(-M_PI*0.5f) ,0, -sin(-M_PI*0.5f), cos(-M_PI*0.5f) };
-	glm::mat3 mm5{ cos(beta),sin(beta),0,-sin(beta),cos(beta),0,0,0,1 };
+	glm::mat3 mm5{ cos(-alpha),sin(-alpha),0,-sin(-alpha),cos(-alpha),0,0,0,1 };
 	/*
 	fprintf(stderr, "\n===========\n");
 	for (int j = 0; j < 3; ++j) {
@@ -232,18 +230,32 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 	}
 	fprintf(stderr, "\n===========\n");
 	*/
-	//	fprintf(stderr,"after %.4f %.4f %.4f\n", alpha,beta,gamma);
-//	glm::vec3 n;
-//	n = rotate * glm::vec3(0, 0, 1) - glm::vec3(model.normalData[i], model.normalData[i + 1], model.normalData[i + 2]);
-//	fprintf(stderr, "==%.4f %.4f %.4f\n", n.x, n.y, n.z);
 	std::vector<glm::vec3> tmp1, tmp2, tmp3, tmp4;
 	rotate_z(shadow, tmp1, -gamma);
 	rotate_x_minus(tmp1, tmp2);
 	rotate_z(tmp2, tmp3, -beta);
 	rotate_x_plus(tmp3, tmp4);
-	rotate_z(tmp4, local, -beta);
-
+	rotate_z(tmp4, local, -alpha);
+	
 	// calc B * R * T * vector (reflection)
+
+	//	glm::vec3 dir = glm::normalize(get_camera_position() - glm::vec3(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]));
+	//	dir = rotate * dir;
+	glm::vec3 color{ 0,0,0 };
+	for (int j = 0; j < lmaxlmax; ++j)
+		for (int p = 0; p < samps; ++p) {
+			glm::vec3 n1{ model.normalData[i],model.normalData[i + 1], model.normalData[i + 2] };
+			glm::vec3 v1{ sin(theta[p]) * cos(phi[p]), sin(theta[p]) * sin(phi[p]), cos(theta[p]) };
+			if (glm::dot(mm1 * mm2 * mm3 * mm4 * mm5 * v1, n1) > 0)
+				//			if (cos(theta[p]) > 0)
+				//			if (glm::dot(n1,v1) > 0)
+				color += local[j] * y_coeff[p][j] / 2.f;// *cos(theta[p]) * brdf(p, dir);
+													   //				color += shadow[j] * y_coeff[p][j] / 2.f;// *std::max(0.f, glm::dot(n1, v1));// *brdf(p, dir);
+		}
+	// yi ding yao shan aaaaa /2.
+	color *= (4.f * M_PI) / float(samps);
+	// fprintf(stderr, "%.4f\n", color.x);
+
 	/*
 		for (int j = 0; j < lmaxlmax; ++j) {
 			glm::vec3 reflect_coeff = glm::vec3(0,0,0);
@@ -263,24 +275,6 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 		for (int j = 0; j < lmaxlmax; ++j)
 			color += yy[j] * reflect[j] / M_PI;
 	*/
-
-	//	glm::vec3 dir = glm::normalize(get_camera_position() - glm::vec3(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]));
-	//	dir = rotate * dir;
-	glm::vec3 color{ 0,0,0 };
-	for (int j = 0; j < lmaxlmax; ++j)
-		for (int p = 0; p < samps; ++p) {
-			glm::vec3 n1{ model.normalData[i],model.normalData[i + 1], model.normalData[i + 2] };
-			glm::vec3 v1{sin(theta[p]) * cos(phi[p]), sin(theta[p]) * sin(phi[p]), cos(theta[p])};
-			if (glm::dot(mm5 * mm4 * mm3 * mm2 * mm1 * v1, n1) > 0)
-//			if (cos(theta[p]) > 0)
-//			if (glm::dot(n1,v1) > 0)
-				color += local[j] * y_coeff[p][j] / 2.f;// *cos(theta[p]) * brdf(p, dir);
-//				color += shadow[j] * y_coeff[p][j] / 2.f;// *std::max(0.f, glm::dot(n1, v1));// *brdf(p, dir);
-		}
-	// yi ding yao shan aaaaa /2.
-	
-	color *= (4.f * M_PI) / float(samps);
-	// fprintf(stderr, "%.4f\n", color.x);
 
 	return color / M_PI / 2.f;
 }
