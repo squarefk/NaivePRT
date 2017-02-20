@@ -5,7 +5,7 @@
 
 void ShadowMapAlgorithm::prepare() {
 	if (builder.import(std::string(OBJECT_FILE_PATH_PREFIX) +
-		std::string("cube.obj"))) {
+		std::string("Buddha.obj"))) {
 		fprintf(stderr, "Loading object file successfully.\n");
 	}
 	builder.generateVAO();
@@ -45,7 +45,7 @@ void ShadowMapAlgorithm::render_target() {
 
 	glm::mat4 Projection = glm::perspective(45.0f, 1.f, 0.1f, 400.0f);
 	glm::mat4 View = glm::lookAt(
-		glm::vec3(-3, 3, -3),	// Position of camera, in World Space
+		glm::vec3(-2, 2, 2),	// Position of camera, in World Space
 		glm::vec3(0, -1, 0),		// and looks at the origin
 		glm::vec3(0, 1, 0)		// Head is up (set to 0,-1,0 to look upside-down)
 	);

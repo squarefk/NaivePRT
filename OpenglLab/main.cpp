@@ -9,6 +9,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <ctime>
+#include <string>
+
 ShadowMapAlgorithm shadowMapAlgorithm;
 PrtAlgorithm prtAlgorithm;
 
@@ -21,6 +24,8 @@ void prepare() {
 void render() {
 //	shadowMapAlgorithm.render();
 	prtAlgorithm.render();
+	Framebuffer::render_to_picture((std::string("test2") + std::to_string(int(time(0)))).c_str());
+	exit(0);
 }
 
 int main() {

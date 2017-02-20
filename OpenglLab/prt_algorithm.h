@@ -8,7 +8,7 @@
 #include <vector>
 
 class PrtAlgorithm {
-	int lmax = 3;
+	int lmax = 5;
 	const static int samps = 10000;
 
 	std::vector<float> phi, theta;

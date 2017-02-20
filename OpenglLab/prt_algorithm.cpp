@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "texture.h"
 #include "shader_helper.h"
+#include "framebuffer.h"
 
 #define  GLEW_STATIC
 #include <GL/glew.h>
@@ -109,7 +110,8 @@ glm::vec3 PrtAlgorithm::precomputed_diffuse_color(int i) {
 		// calc transfer
 		glm::vec3 pos(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]);
 		glm::vec3 dir(sin(theta[j]) * cos(phi[j]), sin(theta[j]) * sin(phi[j]), cos(theta[j]));
-		if (!bvhTree.ray_intersect_with_mesh(BvhTree::Ray(pos, dir))) {
+		if (!bvhTree.ray_intersect_with_mesh(BvhTree::Ray(pos, dir)))
+		{
 			float cos_value = glm::dot(
 				glm::vec3(model.normalData[i], model.normalData[i + 1], model.normalData[i + 2]),
 				glm::vec3(sin(theta[j]) * cos(phi[j]), sin(theta[j]) * sin(phi[j]), cos(theta[j]))
@@ -129,8 +131,9 @@ glm::vec3 PrtAlgorithm::precomputed_diffuse_color(int i) {
 	return color;
 }
 
-// Bank BRDF
 float PrtAlgorithm::brdf(int inIndex, int outIndex) {
+	// Bank BRDF
+	fprintf(stderr, "You used wrong brdf function!\n");
 	glm::vec3 N{ 0, 0, 1 };
 	glm::vec3 L{ sin(theta[inIndex]) * cos(phi[inIndex]), sin(theta[inIndex]) * sin(phi[inIndex]), cos(theta[inIndex]) };
 	glm::vec3 V{ sin(theta[outIndex]) * cos(phi[outIndex]), sin(theta[outIndex]) * sin(phi[outIndex]), cos(theta[outIndex]) };
@@ -144,6 +147,8 @@ float PrtAlgorithm::brdf(int inIndex, int outIndex) {
 }
 
 float PrtAlgorithm::brdf(int inIndex, glm::vec3 V) {
+	// Bank BRDF
+	/*
 	glm::vec3 N{ 0, 0, 1 };
 	glm::vec3 L{ sin(theta[inIndex]) * cos(phi[inIndex]), sin(theta[inIndex]) * sin(phi[inIndex]), cos(theta[inIndex]) };
 	glm::vec3 T = glm::normalize(glm::cross(N, V));
@@ -152,7 +157,17 @@ float PrtAlgorithm::brdf(int inIndex, glm::vec3 V) {
 	}
 	float LT = std::max(0.f, glm::dot(L, T));
 	float VT = std::max(0.f, glm::dot(V, T));
-	return 0.2f + 0.8f * pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 1.f);
+//	fprintf(stderr, "%.4f %.4f \n", pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 0.2f), sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT);
+	return 0.05f + 1.9f * pow(sqrt(1.f - LT * LT) * sqrt(1.f - VT * VT) - LT * VT, 1.5f);
+	*/
+
+	// Blinn-Phong BRDF
+	glm::vec3 N{ 0, 0, 1 };
+	glm::vec3 L{ sin(theta[inIndex]) * cos(phi[inIndex]), sin(theta[inIndex]) * sin(phi[inIndex]), cos(theta[inIndex]) };
+	glm::vec3 H = glm::normalize(L + V);
+	if (L.z < 0 || V.z < 0)
+		return 0.f;
+	return 0.5f + 3.5f * pow(fmax(0.f,glm::dot(N, H)), 8.f) / glm::dot(N, L);
 }
 
 void PrtAlgorithm::rotate_matrix_to_zyz(const glm::mat3 &m, float *alpha, float *beta, float *gamma) {
@@ -193,7 +208,9 @@ glm::vec3 PrtAlgorithm::precomputed_bsdf_color(int i) {
 	for (int k = 0; k < samps; ++k) {
 		glm::vec3 pos(model.positionData[i], model.positionData[i + 1], model.positionData[i + 2]);
 		glm::vec3 dir(sin(theta[k]) * cos(phi[k]), sin(theta[k]) * sin(phi[k]), cos(theta[k]));
-		if (!bvhTree.ray_intersect_with_mesh(BvhTree::Ray(pos, dir))) {
+		glm::vec3 nor(model.normalData[i], model.normalData[i + 1], model.normalData[i + 2]);
+//		if (!bvhTree.ray_intersect_with_mesh(BvhTree::Ray(pos, dir))) {
+		{
 			for (int j = 0; j < lmaxlmax; ++j)
 				for (int p = 0; p < lmaxlmax; ++p)
 					shadow[j] += light[p] * y_coeff[k][j] * y_coeff[k][p];
@@ -267,14 +284,14 @@ void PrtAlgorithm::update_rotate_angle() {
 
 glm::vec3 PrtAlgorithm::get_camera_position() {
 	return glm::vec3(
-		cos(M_PI * 1.5f + rotate_angle) * distance * 2,
-		0,
-		sin(M_PI * 1.5f + rotate_angle) * distance * 2
+		cos(M_PI * 1.5f + rotate_angle) * distance * 1.5,
+		distance * 0,
+		sin(M_PI * 1.5f + rotate_angle) * distance * 1.5
 	);
 }
 
 glm::vec3 PrtAlgorithm::get_camera_focus() {
-	return glm::vec3(0, 0, 0);
+	return glm::vec3(0, distance * 0, 0);
 }
 
 void PrtAlgorithm::prepare() {
@@ -293,10 +310,10 @@ void PrtAlgorithm::prepare() {
 		calc_sh_coeff(theta[i],phi[i],y_coeff[i]);
 	}
 
-	panorama.load("Chelsea_Stairs_8k.jpg");
+	panorama.load("Factory_Catwalk_preview.jpg");
 	curtain.import(std::string(""), 1);
 	curtain.generateVAO();
-	distance = model.import(std::string("bunny.fine.obj"), -1);
+	distance = model.import(std::string("Buddha.obj"), -1);
 	rotate_angle = M_PI;
 	bvhTree.load(model);
 
@@ -307,8 +324,8 @@ void PrtAlgorithm::prepare() {
 		fprintf(stderr, "Process model in %.2f%%, remain %.2f s         \r",
 			100.f * (i + 1) / model.positionData.size(),
 			float(currentTime - startTime) / (i + 1) * (model.positionData.size() - i));
-		glm::vec3 color = precomputed_diffuse_color(i) / 2.f;
-//		glm::vec3 color = precomputed_bsdf_color(i) / 2.f;
+//		glm::vec3 color = precomputed_diffuse_color(i);
+		glm::vec3 color = precomputed_bsdf_color(i);
 		model.colorData[i] = color.r;
 		model.colorData[i+1] = color.g;
 		model.colorData[i+2] = color.b;
@@ -324,6 +341,8 @@ void PrtAlgorithm::prepare() {
 	glEnable(GL_DEPTH_TEST);
 
 	fprintf(stderr, "\nPrt: precomputed processed finishes.\n");
+
+	Framebuffer::render_to_screen();
 }
 
 void PrtAlgorithm::render() {
